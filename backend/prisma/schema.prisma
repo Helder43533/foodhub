@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CLIENTE
+  RESTAURANTE
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDENTE
+  CONFIRMADO
+  EM_PREPARACAO
+  A_CAMINHO
+  ENTREGUE
+  CANCELADO
+}
+
+enum PaymentMethod {
+  DINHEIRO_ENTREGA
+  TRANSFERENCIA
+  MULTICAIXA_SIMULADO
+}
+
+enum PaymentStatus {
+  PENDENTE
+  PAGO
+  FALHADO
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(CLIENTE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  restaurant Restaurant?
+  orders     Order[]
+}
+
+model Restaurant {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  address     String?
+  phone       String?
+  isActive    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ownerId Int  @unique
+  owner   User @relation(fields: [ownerId], references: [id])
+
+  dishes Dish[]
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+
+  dishes Dish[]
+}
+
+model Dish {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  price       Float
+  imageUrl    String?
+  isAvailable Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  restaurantId Int
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+
+  categoryId Int?
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  orderItems OrderItem[]
+}
+
+model Order {
+  id              Int         @id @default(autoincrement())
+  status          OrderStatus @default(PENDENTE)
+  total           Float
+  deliveryAddress String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  items   OrderItem[]
+  payment Payment?
+}
+
+model OrderItem {
+  id       Int   @id @default(autoincrement())
+  quantity Int
+  price    Float
+
+  orderId Int
+  order   Order @relation(fields: [orderId], references: [id])
+
+  dishId Int
+  dish   Dish @relation(fields: [dishId], references: [id])
+}
+
+model Payment {
+  id        Int           @id @default(autoincrement())
+  method    PaymentMethod
+  status    PaymentStatus @default(PENDENTE)
+  createdAt DateTime      @default(now())
+
+  orderId Int   @unique
+  order   Order @relation(fields: [orderId], references: [id])
+}
