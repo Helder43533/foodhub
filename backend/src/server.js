@@ -10,7 +10,16 @@ const orderRoutes = require("./routes/order.routes");
 const adminRoutes = require("./routes/admin.routes");
 const app = express();
 
-app.use(cors());
+  app.use(
+    cors({
+      origin: [
+        "http://localhost:5173",
+        "https://foodhub-drab.vercel.app"
+      ],
+      methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+      credentials: true
+    })
+  );
 app.use(express.json());
 
 app.get("/", (req, res) => {
