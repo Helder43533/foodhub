@@ -16,10 +16,12 @@ import AdminDashboard from "./pages/AdminDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ManageCategories from "./pages/ManageCategories";
 import NotFound from "./pages/NotFound";
+import BackToTop from "./components/BackToTop";
 
 function App() {
   return (
     <BrowserRouter>
+    <BackToTop />
       <Routes>
         {/* Rotas públicas */}
         <Route path="/" element={<Home />} />
