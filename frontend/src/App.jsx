@@ -18,6 +18,7 @@ import ManageCategories from "./pages/ManageCategories";
 import NotFound from "./pages/NotFound";
 import BackToTop from "./components/BackToTop";
 import SessionManager from "./components/SessionManager";
+import About from "./pages/About";
 function App() {
   return (
     <BrowserRouter>
@@ -32,6 +33,7 @@ function App() {
         <Route path="/restaurants/:id" element={<RestaurantDetails />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="*" element={<NotFound />} />
+        <Route path="/about" element={<About />} />
         <Route
           path="/admin/categories"
           element={

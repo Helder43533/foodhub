@@ -52,6 +52,9 @@ function Navbar() {
           <Link to="/restaurants" className="text-slate-700 dark:text-slate-200 hover:text-orange-600">
             Restaurantes
           </Link>
+          <Link to="/about" className="text-slate-700 dark:text-slate-200 hover:text-orange-600" >
+            Sobre
+          </Link>
 
           {user?.role === "CLIENTE" && (
             <Link to="/my-orders" className="text-slate-700 dark:text-slate-200 hover:text-orange-600">
@@ -199,7 +202,9 @@ function Navbar() {
             >
               Restaurantes
             </Link>
-
+            <Link to="/about" onClick={closeMenu} className="block px-4 py-3 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-orange-50 hover:text-orange-600">
+              Sobre
+            </Link>
             <Link
               to="/cart"
               onClick={closeMenu}
