@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 
 const SESSION_LIMIT = 5 * 60 * 1000; // 5 minutos
@@ -32,7 +33,7 @@ function SessionManager() {
         logout();
         localStorage.removeItem(LAST_ACTIVITY_KEY);
 
-        alert("A sua sessão expirou, faça login novamente.");
+        toast.error("A sua sessão terminou por inactividade.");
 
         navigate("/login");
       }

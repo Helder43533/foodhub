@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
 import {
   MapPin,
@@ -6,7 +7,9 @@ import {
   CheckCircle,
   Truck,
   Clock,
-  Store
+  Store,
+  AlertCircle,
+  X
 } from "lucide-react";
 import api from "../services/api";
 import { useCart } from "../context/CartContext";
@@ -21,6 +24,14 @@ function formatCurrency(value) {
   return `${Number(value).toLocaleString("pt-MZ")} MT`;
 }
 
+function getPaymentLabel(paymentMethod) {
+  if (paymentMethod === "DINHEIRO_ENTREGA") return "Dinheiro na entrega";
+  if (paymentMethod === "TRANSFERENCIA") return "Transferência";
+  if (paymentMethod === "MULTICAIXA_SIMULADO") return "Multicaixa simulado";
+
+  return paymentMethod;
+}
+
 function Checkout() {
   const navigate = useNavigate();
   const { cartItems, clearCart, restaurantName } = useCart();
@@ -30,6 +41,7 @@ function Checkout() {
   const [paymentMethod, setPaymentMethod] = useState("DINHEIRO_ENTREGA");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const subtotal = cartItems.reduce((sum, item) => {
     return sum + Number(item.price) * Number(item.quantity);
@@ -48,32 +60,49 @@ function Checkout() {
     }
   }, []);
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  const validateOrder = () => {
     setError("");
 
     if (!user || !token) {
       navigate("/login");
-      return;
+      return false;
     }
 
     if (user.role !== "CLIENTE") {
       setError("Apenas clientes podem finalizar pedidos.");
-      return;
+      return false;
     }
 
     if (cartItems.length === 0) {
       setError("O carrinho está vazio.");
-      return;
+      return false;
     }
 
     if (!deliveryAddress.trim()) {
       setError("Informe o endereço de entrega.");
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+
+    const isValid = validateOrder();
+
+    if (!isValid) {
       return;
     }
 
+    setShowConfirm(true);
+  };
+
+  const confirmOrder = async () => {
     try {
       setLoading(true);
+      setError("");
+      setShowConfirm(false);
 
       const items = cartItems.map((item) => ({
         dishId: item.id,
@@ -94,10 +123,16 @@ function Checkout() {
         }
       );
 
-      clearCart();
-      navigate("/my-orders");
+    toast.success("Pedido realizado com sucesso.");
+
+    clearCart();
+    navigate("/my-orders");
+
     } catch (err) {
-      setError(err.response?.data?.message || "Erro ao finalizar pedido.");
+      const message = err.response?.data?.message || "Erro ao finalizar pedido.";
+
+      setError(message);
+toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -313,6 +348,110 @@ function Checkout() {
           </aside>
         </section>
       </main>
+
+      {showConfirm && (
+        <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center px-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-lg w-full border border-slate-100 dark:border-slate-800 overflow-hidden">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-orange-100 dark:bg-orange-950/40 text-orange-600 flex items-center justify-center">
+                  <AlertCircle size={24} />
+                </div>
+
+                <div>
+                  <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">
+                    Confirmar pedido
+                  </h2>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    Revise os dados antes de enviar.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowConfirm(false)}
+                className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-4 space-y-3 text-sm">
+                <div className="flex justify-between gap-4">
+                  <span className="text-slate-500 dark:text-slate-400">
+                    Restaurante
+                  </span>
+                  <strong className="text-right">
+                    {restaurantName || "Restaurante"}
+                  </strong>
+                </div>
+
+                <div className="flex justify-between gap-4">
+                  <span className="text-slate-500 dark:text-slate-400">
+                    Pagamento
+                  </span>
+                  <strong className="text-right">
+                    {getPaymentLabel(paymentMethod)}
+                  </strong>
+                </div>
+
+                <div className="flex justify-between gap-4">
+                  <span className="text-slate-500 dark:text-slate-400">
+                    Itens
+                  </span>
+                  <strong>{cartItems.length}</strong>
+                </div>
+
+                <div>
+                  <span className="text-slate-500 dark:text-slate-400">
+                    Endereço
+                  </span>
+                  <p className="mt-1 font-semibold text-slate-900 dark:text-white">
+                    {deliveryAddress}
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-orange-50 dark:bg-orange-950/40 rounded-2xl p-4 space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span>Subtotal</span>
+                  <strong>{formatCurrency(subtotal)}</strong>
+                </div>
+
+                <div className="flex justify-between text-sm">
+                  <span>Taxa de entrega</span>
+                  <strong>{formatCurrency(deliveryFee)}</strong>
+                </div>
+
+                <div className="border-t border-orange-200 dark:border-orange-900 pt-3 flex justify-between text-lg">
+                  <span className="font-extrabold">Total final</span>
+                  <strong className="text-orange-600">
+                    {formatCurrency(totalFinal)}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setShowConfirm(false)}
+                  className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 py-3 rounded-2xl font-bold hover:bg-slate-200 dark:hover:bg-slate-700"
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  onClick={confirmOrder}
+                  disabled={loading}
+                  className="bg-orange-600 text-white py-3 rounded-2xl font-bold hover:bg-orange-700 disabled:opacity-60"
+                >
+                  {loading ? "Enviando..." : "Confirmar"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>
