@@ -125,9 +125,12 @@ function Navbar() {
                 <div className="hidden sm:flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-2 rounded-full">
                   <User size={16} className="text-slate-600 dark:text-slate-300" />
 
-                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                    {user.name}
-                  </span>
+                <Link
+                to="/profile"
+                className="font-semibold text-slate-700 dark:text-slate-200 hover:text-orange-600"
+              >
+                {user?.name}
+              </Link>
                 </div>
 
                 <button
