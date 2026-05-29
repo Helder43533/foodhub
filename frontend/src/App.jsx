@@ -22,6 +22,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import BackToTop from "./components/BackToTop";
 import SessionManager from "./components/SessionManager";
 import PWAUpdatePrompt from "./components/PWAUpdatePrompt";
+import Help from "./pages/Help";
 
 function App() {
   return (
@@ -40,7 +41,7 @@ function App() {
         <Route path="/restaurants/:id" element={<RestaurantDetails />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/about" element={<About />} />
-
+        <Route path="/help" element={<Help />} />
         <Route
           path="/profile"
           element={

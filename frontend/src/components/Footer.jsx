@@ -97,7 +97,15 @@ function Footer() {
                   Sobre o sistema
                 </Link>
               </li>
-
+              <li>
+                <Link
+                  to="/help"
+                  className="inline-flex items-center gap-2 hover:text-orange-500 transition"
+                >
+                  <ArrowRight size={15} />
+                  Ajuda
+                </Link>
+              </li>
               <li>
                 <Link
                   to="/cart"
