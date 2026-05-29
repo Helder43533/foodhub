@@ -185,8 +185,7 @@ function Footer() {
           <p>© {currentYear} FoodHub. Todos os direitos reservados.</p>
 
           <p className="flex items-center gap-2">
-            Desenvolvido com <Heart size={15} className="text-orange-500" />{" "}
-            para projecto académico.
+            Desenvolvido por <b>Hélder Manuel Binala</b>
           </p>
         </div>
       </div>
