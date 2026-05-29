@@ -21,12 +21,14 @@ import Profile from "./pages/Profile";
 import ProtectedRoute from "./components/ProtectedRoute";
 import BackToTop from "./components/BackToTop";
 import SessionManager from "./components/SessionManager";
+import PWAUpdatePrompt from "./components/PWAUpdatePrompt";
 
 function App() {
   return (
     <BrowserRouter>
       <SessionManager />
       <BackToTop />
+       <PWAUpdatePrompt />
       <Toaster position="top-right" />
 
       <Routes>
