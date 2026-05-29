@@ -8,11 +8,11 @@ import {
   Star,
   Store,
   ShoppingCart,
+  PackageCheck,
   Utensils,
   Smartphone,
   CheckCircle,
-  UserPlus,
-  Download
+  UserPlus
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../services/api";
@@ -78,10 +78,6 @@ function Home() {
   const [popularDishes, setPopularDishes] = useState([]);
   const [loadingDishes, setLoadingDishes] = useState(true);
 
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [canInstall, setCanInstall] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(false);
-
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
@@ -95,66 +91,24 @@ function Home() {
       try {
         setLoadingDishes(true);
 
-        const response = await api.get("/restaurants");
+   const response = await api.get("/dishes/popular");
 
-        const allDishes = response.data.flatMap((restaurant) =>
-          (restaurant.dishes || [])
-            .filter((dish) => dish.isAvailable)
-            .map((dish) => ({
-              ...dish,
-              restaurant: {
-                id: restaurant.id,
-                name: restaurant.name
-              },
-              restaurantId: restaurant.id,
-              restaurantName: restaurant.name
-            }))
-        );
+    const dishes = response.data.map((dish) => ({
+      ...dish,
+      restaurantId: dish.restaurant?.id,
+      restaurantName: dish.restaurant?.name || "Restaurante"
+    }));
 
-        setPopularDishes(allDishes.slice(0, 3));
-      } catch (err) {
-        setPopularDishes([]);
-      } finally {
-        setLoadingDishes(false);
-      }
-    }
+    setPopularDishes(dishes.slice(0, 3));
+          } catch (err) {
+            setPopularDishes([]);
+          } finally {
+            setLoadingDishes(false);
+          }
+        }
 
-    loadPopularDishes();
-  }, []);
-
-  useEffect(() => {
-    const isStandalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      window.navigator.standalone === true;
-
-    if (isStandalone) {
-      setIsInstalled(true);
-    }
-
-    const handleBeforeInstallPrompt = (event) => {
-      event.preventDefault();
-      setDeferredPrompt(event);
-      setCanInstall(true);
-    };
-
-    const handleAppInstalled = () => {
-      setIsInstalled(true);
-      setCanInstall(false);
-      setDeferredPrompt(null);
-      toast.success("FoodHub instalado com sucesso.");
-    };
-
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-    window.addEventListener("appinstalled", handleAppInstalled);
-
-    return () => {
-      window.removeEventListener(
-        "beforeinstallprompt",
-        handleBeforeInstallPrompt
-      );
-      window.removeEventListener("appinstalled", handleAppInstalled);
-    };
-  }, []);
+        loadPopularDishes();
+      }, []);
 
   const slide = slides[currentSlide];
 
@@ -235,33 +189,6 @@ function Home() {
     }
 
     toast.success(result?.message || "Prato adicionado ao carrinho.");
-  };
-
-  const handleInstallApp = async () => {
-    if (isInstalled) {
-      toast.success("A aplicação já está instalada neste dispositivo.");
-      return;
-    }
-
-    if (!deferredPrompt) {
-      toast.error(
-        "A instalação automática ainda não está disponível. No telemóvel, use o menu do navegador e escolha 'Adicionar ao ecrã inicial'."
-      );
-      return;
-    }
-
-    deferredPrompt.prompt();
-
-    const choiceResult = await deferredPrompt.userChoice;
-
-    if (choiceResult.outcome === "accepted") {
-      toast.success("A instalar o FoodHub...");
-    } else {
-      toast("Instalação cancelada.");
-    }
-
-    setDeferredPrompt(null);
-    setCanInstall(false);
   };
 
   return (
@@ -389,9 +316,17 @@ function Home() {
                             {dish.restaurantName}
                           </p>
 
-                          <strong className="text-orange-600">
-                            {Number(dish.price).toLocaleString("pt-MZ")} MT
-                          </strong>
+                         <div className="flex items-center gap-2">
+                      <strong className="text-orange-600">
+                        {Number(dish.price).toLocaleString("pt-MZ")} MT
+                      </strong>
+
+                  {dish.totalSold > 0 && (
+                    <span className="text-xs bg-orange-100 dark:bg-orange-950/40 text-orange-600 px-2 py-1 rounded-full font-bold">
+                      {dish.totalSold} vendidos
+                    </span>
+                      )}
+                    </div>
                         </div>
 
                         <button
@@ -485,45 +420,61 @@ function Home() {
             </div>
 
             <div className="mt-10 grid md:grid-cols-4 gap-6">
-              {[
-                {
-                  number: "1",
-                  title: "Escolha o restaurante",
-                  text: "Veja restaurantes parceiros e escolha onde deseja comprar."
-                },
-                {
-                  number: "2",
-                  title: "Selecione os pratos",
-                  text: "Pesquise, filtre, veja preços e adicione pratos ao carrinho."
-                },
-                {
-                  number: "3",
-                  title: "Confirme o pedido",
-                  text: "Informe endereço, pagamento e confirme a encomenda."
-                },
-                {
-                  number: "4",
-                  title: "Acompanhe o estado",
-                  text: "Consulte os seus pedidos abertos e finalizados."
-                }
-              ].map((step) => (
-                <div
-                  key={step.number}
-                  className="bg-slate-50 dark:bg-slate-800 p-6 rounded-3xl"
-                >
-                  <div className="w-14 h-14 rounded-2xl bg-orange-600 text-white flex items-center justify-center font-extrabold text-xl">
-                    {step.number}
-                  </div>
-
-                  <h3 className="mt-5 text-xl font-bold text-slate-900 dark:text-white">
-                    {step.title}
-                  </h3>
-
-                  <p className="mt-2 text-slate-600 dark:text-slate-300">
-                    {step.text}
-                  </p>
+              <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-3xl">
+                <div className="w-14 h-14 rounded-2xl bg-orange-600 text-white flex items-center justify-center font-extrabold text-xl">
+                  1
                 </div>
-              ))}
+
+                <h3 className="mt-5 text-xl font-bold text-slate-900 dark:text-white">
+                  Escolha o restaurante
+                </h3>
+
+                <p className="mt-2 text-slate-600 dark:text-slate-300">
+                  Veja restaurantes parceiros e escolha onde deseja comprar.
+                </p>
+              </div>
+
+              <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-3xl">
+                <div className="w-14 h-14 rounded-2xl bg-orange-600 text-white flex items-center justify-center font-extrabold text-xl">
+                  2
+                </div>
+
+                <h3 className="mt-5 text-xl font-bold text-slate-900 dark:text-white">
+                  Selecione os pratos
+                </h3>
+
+                <p className="mt-2 text-slate-600 dark:text-slate-300">
+                  Pesquise, filtre, veja preços e adicione pratos ao carrinho.
+                </p>
+              </div>
+
+              <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-3xl">
+                <div className="w-14 h-14 rounded-2xl bg-orange-600 text-white flex items-center justify-center font-extrabold text-xl">
+                  3
+                </div>
+
+                <h3 className="mt-5 text-xl font-bold text-slate-900 dark:text-white">
+                  Confirme o pedido
+                </h3>
+
+                <p className="mt-2 text-slate-600 dark:text-slate-300">
+                  Informe endereço, pagamento e confirme a encomenda.
+                </p>
+              </div>
+
+              <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-3xl">
+                <div className="w-14 h-14 rounded-2xl bg-orange-600 text-white flex items-center justify-center font-extrabold text-xl">
+                  4
+                </div>
+
+                <h3 className="mt-5 text-xl font-bold text-slate-900 dark:text-white">
+                  Acompanhe o estado
+                </h3>
+
+                <p className="mt-2 text-slate-600 dark:text-slate-300">
+                  Consulte os seus pedidos abertos e finalizados.
+                </p>
+              </div>
             </div>
           </div>
         </section>
@@ -650,32 +601,13 @@ function Home() {
                 ))}
               </div>
 
-              <div className="mt-8 flex flex-col sm:flex-row gap-3">
-                <button
-                  type="button"
-                  onClick={handleInstallApp}
-                  disabled={isInstalled}
-                  className="inline-flex items-center justify-center gap-2 bg-orange-600 text-white px-6 py-3 rounded-2xl hover:bg-orange-700 disabled:opacity-60 disabled:cursor-not-allowed font-bold"
-                >
-                  <Download size={18} />
-                  {isInstalled ? "Aplicação instalada" : "Instalar aplicação"}
-                </button>
-
-                <Link
-                  to="/about"
-                  className="inline-flex items-center justify-center gap-2 bg-white text-slate-900 px-6 py-3 rounded-2xl hover:bg-slate-100 font-bold"
-                >
-                  Saber mais
-                  <ArrowRight size={18} />
-                </Link>
-              </div>
-
-              {!canInstall && !isInstalled && (
-                <p className="mt-4 text-sm text-slate-400">
-                  Se o botão não abrir a instalação, use o menu do navegador e
-                  escolha “Adicionar ao ecrã inicial”.
-                </p>
-              )}
+              <Link
+                to="/about"
+                className="mt-8 inline-flex items-center gap-2 bg-white text-slate-900 px-6 py-3 rounded-2xl hover:bg-slate-100 font-bold"
+              >
+                Saber mais
+                <ArrowRight size={18} />
+              </Link>
             </div>
           </div>
         </section>

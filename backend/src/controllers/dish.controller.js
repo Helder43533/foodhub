@@ -78,6 +78,91 @@ const listDishes = async (req, res) => {
   }
 };
 
+const listPopularDishes = async (req, res) => {
+  try {
+    const popularItems = await prisma.orderItem.groupBy({
+      by: ["dishId"],
+      _sum: {
+        quantity: true
+      },
+      _count: {
+        dishId: true
+      },
+      orderBy: {
+        _sum: {
+          quantity: "desc"
+        }
+      },
+      take: 6
+    });
+
+    const dishIds = popularItems.map((item) => item.dishId);
+
+    if (dishIds.length === 0) {
+      const fallbackDishes = await prisma.dish.findMany({
+        where: {
+          isAvailable: true,
+          restaurant: {
+            isActive: true
+          }
+        },
+        include: {
+          restaurant: true,
+          category: true
+        },
+        orderBy: {
+          createdAt: "desc"
+        },
+        take: 6
+      });
+
+      return res.json(
+        fallbackDishes.map((dish) => ({
+          ...dish,
+          totalSold: 0,
+          totalOrders: 0
+        }))
+      );
+    }
+
+    const dishes = await prisma.dish.findMany({
+      where: {
+        id: {
+          in: dishIds
+        },
+        isAvailable: true,
+        restaurant: {
+          isActive: true
+        }
+      },
+      include: {
+        restaurant: true,
+        category: true
+      }
+    });
+
+    const dishesWithSales = dishes
+      .map((dish) => {
+        const salesInfo = popularItems.find((item) => item.dishId === dish.id);
+
+        return {
+          ...dish,
+          totalSold: salesInfo?._sum?.quantity || 0,
+          totalOrders: salesInfo?._count?.dishId || 0
+        };
+      })
+      .sort((a, b) => b.totalSold - a.totalSold);
+
+    return res.json(dishesWithSales);
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      message: "Erro ao listar pratos mais comprados."
+    });
+  }
+};
+
 const getDishById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -137,7 +222,8 @@ const listDishesByRestaurant = async (req, res) => {
 const updateDish = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, price, imageUrl, isAvailable, categoryId } = req.body;
+    const { name, description, price, imageUrl, isAvailable, categoryId } =
+      req.body;
 
     const restaurant = await prisma.restaurant.findUnique({
       where: {
@@ -255,6 +341,7 @@ const deleteDish = async (req, res) => {
 module.exports = {
   createDish,
   listDishes,
+  listPopularDishes,
   getDishById,
   listDishesByRestaurant,
   updateDish,

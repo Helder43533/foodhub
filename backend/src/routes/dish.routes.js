@@ -3,6 +3,7 @@ const express = require("express");
 const {
   createDish,
   listDishes,
+  listPopularDishes,
   getDishById,
   listDishesByRestaurant,
   updateDish,
@@ -17,6 +18,8 @@ const {
 const router = express.Router();
 
 router.get("/", listDishes);
+
+router.get("/popular", listPopularDishes);
 
 router.get("/restaurant/:restaurantId", listDishesByRestaurant);
 
